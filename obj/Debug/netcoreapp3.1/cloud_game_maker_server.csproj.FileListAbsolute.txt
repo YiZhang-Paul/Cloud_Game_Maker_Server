@@ -18,3 +18,7 @@ D:\Apps\Games\cloud_game_maker_server\obj\Debug\netcoreapp3.1\staticwebassets\cl
 D:\Apps\Games\cloud_game_maker_server\obj\Debug\netcoreapp3.1\cloud_game_maker_server.dll
 D:\Apps\Games\cloud_game_maker_server\obj\Debug\netcoreapp3.1\cloud_game_maker_server.pdb
 D:\Apps\Games\cloud_game_maker_server\obj\Debug\netcoreapp3.1\cloud_game_maker_server.genruntimeconfig.cache
+D:\Apps\Games\cloud_game_maker_server\bin\Debug\netcoreapp3.1\AWSSDK.Core.dll
+D:\Apps\Games\cloud_game_maker_server\bin\Debug\netcoreapp3.1\AWSSDK.S3.dll
+D:\Apps\Games\cloud_game_maker_server\obj\Debug\netcoreapp3.1\cloud_game_maker_server.csproj.CopyComplete
+D:\Apps\Games\cloud_game_maker_server\bin\Debug\netcoreapp3.1\AWSSDK.Extensions.NETCore.Setup.dll

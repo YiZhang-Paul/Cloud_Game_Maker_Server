@@ -40,6 +40,16 @@
       },
       "frameworks": {
         "netcoreapp3.1": {
+          "dependencies": {
+            "AWSSDK.Extensions.NETCore.Setup": {
+              "target": "Package",
+              "version": "[*, )"
+            },
+            "AWSSDK.S3": {
+              "target": "Package",
+              "version": "[3.5.3.7, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
