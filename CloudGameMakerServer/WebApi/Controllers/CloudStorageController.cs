@@ -46,7 +46,7 @@ namespace WebApi.Controllers
                 {
                     Id = s3Object.Key,
                     Name = Regex.Replace(s3Object.Key, $"^.*/|\\.(jpg|png)$", string.Empty),
-                    Type = s3Object.Headers.ContentType,
+                    Mime = s3Object.Headers.ContentType,
                     Extension = Regex.IsMatch(s3Object.Key, "\\.png$") ? "png" : "jpg",
                     Base64 = Convert.ToBase64String(bytes)
                 };
@@ -76,7 +76,7 @@ namespace WebApi.Controllers
                         BucketName = BucketName,
                         Key = key,
                         InputStream = stream,
-                        ContentType = file.Type
+                        ContentType = file.Mime
                     };
 
                     await S3.PutObjectAsync(request).ConfigureAwait(false);
