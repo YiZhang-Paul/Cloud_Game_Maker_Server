@@ -1,6 +1,8 @@
 using Amazon.S3;
 using Amazon.S3.Model;
+using Core.Models.GameSprites;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -20,25 +22,23 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("sprites")]
-        public async Task<bool> UploadFile()
+        public async Task<bool> UploadSprite([FromBody]SpriteFile file)
         {
-            var file = Request.Form.Files?[0];
-
-            if (file == null || file.Length == 0)
+            if (string.IsNullOrWhiteSpace(file?.Base64))
             {
                 return false;
             }
 
             try
             {
-                using (var stream = new MemoryStream())
-                {
-                    await file.CopyToAsync(stream).ConfigureAwait(false);
+                var bytes = Convert.FromBase64String(file.Base64);
 
+                using (var stream = new MemoryStream(bytes))
+                {
                     var request = new PutObjectRequest
                     {
                         BucketName = BucketName,
-                        Key = $"uploads/{file.Name}",
+                        Key = $"sprites/{file.Name}",
                         InputStream = stream
                     };
 
