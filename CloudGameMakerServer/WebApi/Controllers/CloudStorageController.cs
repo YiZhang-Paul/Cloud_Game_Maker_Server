@@ -47,7 +47,6 @@ namespace WebApi.Controllers
                 {
                     Id = s3Object.Key,
                     Name = Regex.Replace(s3Object.Key, $"^.*/|\\.(jpg|png)$", string.Empty),
-                    Content = bytes,
                     Mime = s3Object.Headers.ContentType,
                     Extension = Regex.IsMatch(s3Object.Key, "\\.png$") ? "png" : "jpg"
                 };
