@@ -2,7 +2,6 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Core.Models.GameSprites;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -46,9 +45,9 @@ namespace WebApi.Controllers
                 {
                     Id = s3Object.Key,
                     Name = Regex.Replace(s3Object.Key, $"^.*/|\\.(jpg|png)$", string.Empty),
+                    Content = bytes,
                     Mime = s3Object.Headers.ContentType,
-                    Extension = Regex.IsMatch(s3Object.Key, "\\.png$") ? "png" : "jpg",
-                    Base64 = Convert.ToBase64String(bytes)
+                    Extension = Regex.IsMatch(s3Object.Key, "\\.png$") ? "png" : "jpg"
                 };
             });
 
@@ -59,7 +58,7 @@ namespace WebApi.Controllers
         [Route("sprites")]
         public async Task<string> AddSprite([FromBody]SpriteFile file)
         {
-            if (string.IsNullOrWhiteSpace(file?.Base64))
+            if (file?.Content == null)
             {
                 return null;
             }
@@ -67,9 +66,8 @@ namespace WebApi.Controllers
             try
             {
                 var key = $"sprites/{file.Name}.{file.Extension}";
-                var bytes = Convert.FromBase64String(file.Base64);
 
-                using (var stream = new MemoryStream(bytes))
+                using (var stream = new MemoryStream(file.Content))
                 {
                     var request = new PutObjectRequest
                     {
