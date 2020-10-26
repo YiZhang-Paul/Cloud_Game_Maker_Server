@@ -95,7 +95,10 @@ namespace WebApi.Controllers
         {
             try
             {
-                await S3.DeleteObjectAsync(BucketName, WebUtility.UrlDecode(id)).ConfigureAwait(false);
+                var key = WebUtility.UrlDecode(id);
+                // will throw error when object does not exist
+                await S3.GetObjectMetadataAsync(BucketName, key).ConfigureAwait(false);
+                await S3.DeleteObjectAsync(BucketName, key).ConfigureAwait(false);
 
                 return true;
             }
