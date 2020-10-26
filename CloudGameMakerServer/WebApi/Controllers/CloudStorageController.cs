@@ -91,10 +91,10 @@ namespace WebApi.Controllers
         }
 
         [HttpPut]
-        [Route("sprites/{id}")]
-        public async Task<string> UpdateSprite([FromBody]SpriteFile updated, string id)
+        [Route("sprites")]
+        public async Task<string> UpdateSprite([FromBody]SpriteFile updated)
         {
-            if (!await DeleteSprite(id).ConfigureAwait(false))
+            if (!await DeleteSprite(updated.Originated).ConfigureAwait(false))
             {
                 return null;
             }
