@@ -70,8 +70,9 @@ namespace WebApi.Controllers
                     var request = new PutObjectRequest
                     {
                         BucketName = BucketName,
-                        Key = $"sprites/{file.Name}",
-                        InputStream = stream
+                        Key = $"sprites/{file.Name}.{file.Extension}",
+                        InputStream = stream,
+                        ContentType = file.Type
                     };
 
                     await S3.PutObjectAsync(request).ConfigureAwait(false);
