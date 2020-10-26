@@ -3,6 +3,7 @@ using Amazon.S3.Model;
 using Core.Models.GameSprites;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,28 +32,26 @@ namespace WebApi.Controllers
         {
             var response = await S3.ListObjectsAsync(BucketName, "sprites").ConfigureAwait(false);
 
-            var tasks = response.S3Objects.Select(async _ =>
+            return response.S3Objects.Select(_ =>
             {
-                var s3Object = await S3.GetObjectAsync(BucketName, _.Key).ConfigureAwait(false);
-                var bytes = new byte[(int)s3Object.ResponseStream.Length];
+                var isPng = Regex.IsMatch(_.Key, "\\.png$");
 
-                using (var stream = new MemoryStream())
+                var request = new GetPreSignedUrlRequest
                 {
-                    await s3Object.ResponseStream.CopyToAsync(stream).ConfigureAwait(false);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    stream.Read(bytes, 0, (int)stream.Length);
-                }
+                    BucketName = BucketName,
+                    Key = _.Key,
+                    Expires = DateTime.UtcNow.AddHours(2)
+                };
 
                 return new SpriteFile
                 {
-                    Id = s3Object.Key,
-                    Name = Regex.Replace(s3Object.Key, $"^.*/|\\.(jpg|png)$", string.Empty),
-                    Mime = s3Object.Headers.ContentType,
-                    Extension = Regex.IsMatch(s3Object.Key, "\\.png$") ? "png" : "jpg"
+                    Id = _.Key,
+                    Name = Regex.Replace(_.Key, $"^.*/|\\.(jpg|png)$", string.Empty),
+                    Mime = isPng ? "image/png" : "image/jpeg",
+                    Extension = isPng ? "png" : "jpg",
+                    Url = S3.GetPreSignedURL(request)
                 };
             });
-
-            return await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         [HttpPost]

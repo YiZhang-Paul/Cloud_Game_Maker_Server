@@ -7,5 +7,6 @@ namespace Core.Models.GameSprites
         public string Name { get; set; }
         public string Mime { get; set; }
         public string Extension { get; set; }
+        public string Url { get; set; }
     }
 }
