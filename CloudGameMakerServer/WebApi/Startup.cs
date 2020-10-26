@@ -21,7 +21,7 @@ namespace WebApi
         {
             services.AddCors(options =>
             {
-                options.AddPolicy("cgm-cors", _ => _.WithOrigins("http://localhost:4200").AllowAnyHeader());
+                options.AddPolicy("cgm-cors", _ => _.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod());
             });
 
             services.AddControllers();
