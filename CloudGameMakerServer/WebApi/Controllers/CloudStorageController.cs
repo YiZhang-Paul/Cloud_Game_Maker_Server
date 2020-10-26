@@ -1,11 +1,13 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using Core.Models.GameSprites;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -56,25 +58,30 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("sprites")]
-        public async Task<string> AddSprite([FromBody]SpriteFile file)
+        public async Task<string> AddSprite([FromForm]IFormFile file, [FromForm]string spriteJson)
         {
-            if (file?.Content == null)
+            if (file == null || spriteJson == null)
             {
                 return null;
             }
 
+            var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var sprite = JsonSerializer.Deserialize<SpriteFile>(spriteJson, option);
+
             try
             {
-                var key = $"sprites/{file.Name}.{file.Extension}";
+                var key = $"sprites/{sprite.Name}.{sprite.Extension}";
 
-                using (var stream = new MemoryStream(file.Content))
+                using (var stream = new MemoryStream())
                 {
+                    await file.CopyToAsync(stream).ConfigureAwait(false);
+
                     var request = new PutObjectRequest
                     {
                         BucketName = BucketName,
                         Key = key,
                         InputStream = stream,
-                        ContentType = file.Mime
+                        ContentType = sprite.Mime
                     };
 
                     await S3.PutObjectAsync(request).ConfigureAwait(false);
