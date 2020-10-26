@@ -96,15 +96,15 @@ namespace WebApi.Controllers
         }
 
         [HttpPut]
-        [Route("sprites")]
-        public async Task<string> UpdateSprite([FromBody]SpriteFile updated)
+        [Route("sprites/{originatedId}")]
+        public async Task<string> UpdateSprite([FromForm]IFormFile file, [FromForm]string spriteJson, string originatedId)
         {
-            if (!await DeleteSprite(updated.Originated).ConfigureAwait(false))
+            if (!await DeleteSprite(WebUtility.UrlDecode(originatedId)).ConfigureAwait(false))
             {
                 return null;
             }
 
-            return await AddSprite(updated).ConfigureAwait(false);
+            return await AddSprite(file, spriteJson).ConfigureAwait(false);
         }
 
         [HttpDelete]
