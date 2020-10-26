@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace WebApi.Controllers
@@ -42,9 +43,10 @@ namespace WebApi.Controllers
 
                 return new SpriteFile
                 {
-                    Name = s3Object.Key,
-                    Type = "",
-                    Extension = "",
+                    Id = s3Object.Key,
+                    Name = Regex.Replace(s3Object.Key, $"^.*/|\\.(jpg|png)$", string.Empty),
+                    Type = s3Object.Headers.ContentType,
+                    Extension = Regex.IsMatch(s3Object.Key, "\\.png$") ? "png" : "jpg",
                     Base64 = Convert.ToBase64String(bytes)
                 };
             });
