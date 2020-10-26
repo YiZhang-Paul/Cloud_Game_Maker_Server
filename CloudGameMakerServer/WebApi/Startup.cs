@@ -19,6 +19,11 @@ namespace WebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(options =>
+            {
+                options.AddPolicy("cgm-cors", _ => _.WithOrigins("http://localhost:4200").AllowAnyHeader());
+            });
+
             services.AddControllers();
             services.AddDefaultAWSOptions(Configuration.GetAWSOptions());
             services.AddAWSService<IAmazonS3>();
@@ -33,9 +38,8 @@ namespace WebApi
             }
 
             app.UseHttpsRedirection();
-
             app.UseRouting();
-
+            app.UseCors("cgm-cors");
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
