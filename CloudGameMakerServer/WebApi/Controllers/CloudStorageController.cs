@@ -57,15 +57,16 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("sprites")]
-        public async Task<bool> UploadSprite([FromBody]SpriteFile file)
+        public async Task<string> UploadSprite([FromBody]SpriteFile file)
         {
             if (string.IsNullOrWhiteSpace(file?.Base64))
             {
-                return false;
+                return null;
             }
 
             try
             {
+                var key = $"sprites/{file.Name}.{file.Extension}";
                 var bytes = Convert.FromBase64String(file.Base64);
 
                 using (var stream = new MemoryStream(bytes))
@@ -73,7 +74,7 @@ namespace WebApi.Controllers
                     var request = new PutObjectRequest
                     {
                         BucketName = BucketName,
-                        Key = $"sprites/{file.Name}.{file.Extension}",
+                        Key = key,
                         InputStream = stream,
                         ContentType = file.Type
                     };
@@ -81,11 +82,11 @@ namespace WebApi.Controllers
                     await S3.PutObjectAsync(request).ConfigureAwait(false);
                 }
 
-                return true;
+                return key;
             }
             catch
             {
-                return false;
+                return null;
             }
         }
 
