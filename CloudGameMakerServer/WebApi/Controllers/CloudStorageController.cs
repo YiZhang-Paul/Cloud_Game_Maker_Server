@@ -57,7 +57,7 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("sprites")]
-        public async Task<string> UploadSprite([FromBody]SpriteFile file)
+        public async Task<string> AddSprite([FromBody]SpriteFile file)
         {
             if (string.IsNullOrWhiteSpace(file?.Base64))
             {
@@ -88,6 +88,18 @@ namespace WebApi.Controllers
             {
                 return null;
             }
+        }
+
+        [HttpPut]
+        [Route("sprites/{id}")]
+        public async Task<string> UpdateSprite([FromBody]SpriteFile updated, string id)
+        {
+            if (!await DeleteSprite(id).ConfigureAwait(false))
+            {
+                return null;
+            }
+
+            return await AddSprite(updated).ConfigureAwait(false);
         }
 
         [HttpDelete]
