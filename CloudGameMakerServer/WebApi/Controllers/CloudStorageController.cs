@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -79,6 +80,22 @@ namespace WebApi.Controllers
 
                     await S3.PutObjectAsync(request).ConfigureAwait(false);
                 }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        [HttpDelete]
+        [Route("sprites/{id}")]
+        public async Task<bool> DeleteSprite(string id)
+        {
+            try
+            {
+                await S3.DeleteObjectAsync(BucketName, WebUtility.UrlDecode(id)).ConfigureAwait(false);
 
                 return true;
             }
