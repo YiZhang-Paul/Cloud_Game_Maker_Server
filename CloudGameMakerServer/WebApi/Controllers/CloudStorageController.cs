@@ -1,11 +1,11 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using Core.Models.GameSprites;
+using Core.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
@@ -22,10 +22,12 @@ namespace WebApi.Controllers
     {
         private const string BucketName = "cloud-game-maker";
         private IAmazonS3 S3 { get; set; }
+        private IImageService ImageService { get; set; }
 
-        public CloudStorageController(IAmazonS3 s3)
+        public CloudStorageController(IAmazonS3 s3, IImageService imageService)
         {
             S3 = s3;
+            ImageService = imageService;
         }
 
         [HttpGet]
@@ -97,24 +99,18 @@ namespace WebApi.Controllers
 
                 using (var stream = new MemoryStream())
                 {
-                    await file.CopyToAsync(stream).ConfigureAwait(false);
-                    var image = Image.FromStream(stream);
-                    var thumbnail = image.GetThumbnailImage(100, 100, () => false, IntPtr.Zero);
+                    var thumbnail = await ImageService.GetThumbnailImage(100, 100, file).ConfigureAwait(false);
+                    thumbnail.Save(stream, ImageFormat.Png);
 
-                    using (var thumbnailStream = new MemoryStream())
+                    var request = new PutObjectRequest
                     {
-                        thumbnail.Save(thumbnailStream, ImageFormat.Png);
+                        BucketName = BucketName,
+                        Key = $"thumbnails/{key}",
+                        InputStream = stream,
+                        ContentType = "image/png"
+                    };
 
-                        var request = new PutObjectRequest
-                        {
-                            BucketName = BucketName,
-                            Key = $"thumbnails/{key}",
-                            InputStream = thumbnailStream,
-                            ContentType = "image/png"
-                        };
-
-                        await S3.PutObjectAsync(request).ConfigureAwait(false);
-                    }
+                    await S3.PutObjectAsync(request).ConfigureAwait(false);
                 }
 
                 return key;
