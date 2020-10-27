@@ -1,10 +1,8 @@
 using Amazon.S3;
-using Amazon.S3.Model;
 using Core.Models.GameSprites;
 using Core.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -34,33 +32,14 @@ namespace WebApi.Controllers
         {
             var response = await S3.ListObjectsAsync(BucketName, "sprites").ConfigureAwait(false);
 
-            return response.S3Objects.Select(_ =>
+            return response.S3Objects.Select(_ => new SpriteFile
             {
-                var isPng = Regex.IsMatch(_.Key, "\\.png$");
-
-                var originalRequest = new GetPreSignedUrlRequest
-                {
-                    BucketName = BucketName,
-                    Key = _.Key,
-                    Expires = DateTime.UtcNow.AddHours(2)
-                };
-
-                var thumbnailRequest = new GetPreSignedUrlRequest
-                {
-                    BucketName = BucketName,
-                    Key = $"thumbnails/{_.Key}",
-                    Expires = DateTime.UtcNow.AddHours(2)
-                };
-
-                return new SpriteFile
-                {
-                    Id = _.Key,
-                    Name = Regex.Replace(_.Key, $"^.*/|\\.(jpg|png)$", string.Empty),
-                    Mime = isPng ? "image/png" : "image/jpeg",
-                    Extension = isPng ? "png" : "jpg",
-                    OriginalUrl = S3.GetPreSignedURL(originalRequest),
-                    ThumbnailUrl = S3.GetPreSignedURL(thumbnailRequest)
-                };
+                Id = _.Key,
+                Name = Regex.Replace(_.Key, $"^.*/|\\.(jpg|png)$", string.Empty),
+                Mime = Regex.IsMatch(_.Key, "\\.png$") ? "image/png" : "image/jpeg",
+                Extension = Regex.IsMatch(_.Key, "\\.png$") ? "png" : "jpg",
+                OriginalUrl = S3Service.GetPreSignedURL(BucketName, _.Key, 2),
+                ThumbnailUrl = S3Service.GetThumbnailPreSignedURL(BucketName, _.Key, 2)
             });
         }
 
@@ -97,20 +76,10 @@ namespace WebApi.Controllers
         [Route("sprites/{id}")]
         public async Task<bool> DeleteSprite(string id)
         {
-            try
-            {
-                var key = WebUtility.UrlDecode(id);
-                // will throw error when object does not exist
-                await S3.GetObjectMetadataAsync(BucketName, key).ConfigureAwait(false);
-                await S3.DeleteObjectAsync(BucketName, key).ConfigureAwait(false);
-                _ = S3.DeleteObjectAsync(BucketName, $"thumbnails/{key}").ConfigureAwait(false);
+            var key = WebUtility.UrlDecode(id);
+            _ = S3Service.DeleteThumbnail(BucketName, key).ConfigureAwait(false);
 
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await S3Service.DeleteFile(BucketName, key).ConfigureAwait(false);
         }
     }
 }
