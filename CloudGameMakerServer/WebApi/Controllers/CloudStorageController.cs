@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -83,6 +85,28 @@ namespace WebApi.Controllers
                     };
 
                     await S3.PutObjectAsync(request).ConfigureAwait(false);
+                }
+
+                using (var stream = new MemoryStream())
+                {
+                    await file.CopyToAsync(stream).ConfigureAwait(false);
+                    var image = Image.FromStream(stream);
+                    var thumbnail = image.GetThumbnailImage(100, 100, () => false, IntPtr.Zero);
+
+                    using (var thumbnailStream = new MemoryStream())
+                    {
+                        thumbnail.Save(thumbnailStream, ImageFormat.Png);
+
+                        var request = new PutObjectRequest
+                        {
+                            BucketName = BucketName,
+                            Key = $"thumbnails/{key}",
+                            InputStream = thumbnailStream,
+                            ContentType = "image/png"
+                        };
+
+                        await S3.PutObjectAsync(request).ConfigureAwait(false);
+                    }
                 }
 
                 return key;
