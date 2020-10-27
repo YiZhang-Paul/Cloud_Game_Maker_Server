@@ -38,10 +38,17 @@ namespace WebApi.Controllers
             {
                 var isPng = Regex.IsMatch(_.Key, "\\.png$");
 
-                var request = new GetPreSignedUrlRequest
+                var originalRequest = new GetPreSignedUrlRequest
                 {
                     BucketName = BucketName,
                     Key = _.Key,
+                    Expires = DateTime.UtcNow.AddHours(2)
+                };
+
+                var thumbnailRequest = new GetPreSignedUrlRequest
+                {
+                    BucketName = BucketName,
+                    Key = $"thumbnails/{_.Key}",
                     Expires = DateTime.UtcNow.AddHours(2)
                 };
 
@@ -51,7 +58,8 @@ namespace WebApi.Controllers
                     Name = Regex.Replace(_.Key, $"^.*/|\\.(jpg|png)$", string.Empty),
                     Mime = isPng ? "image/png" : "image/jpeg",
                     Extension = isPng ? "png" : "jpg",
-                    Url = S3.GetPreSignedURL(request)
+                    OriginalUrl = S3.GetPreSignedURL(originalRequest),
+                    ThumbnailUrl = S3.GetPreSignedURL(thumbnailRequest)
                 };
             });
         }
