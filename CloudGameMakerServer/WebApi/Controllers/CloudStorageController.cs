@@ -147,6 +147,7 @@ namespace WebApi.Controllers
                 // will throw error when object does not exist
                 await S3.GetObjectMetadataAsync(BucketName, key).ConfigureAwait(false);
                 await S3.DeleteObjectAsync(BucketName, key).ConfigureAwait(false);
+                _ = S3.DeleteObjectAsync(BucketName, $"thumbnails/{key}").ConfigureAwait(false);
 
                 return true;
             }
