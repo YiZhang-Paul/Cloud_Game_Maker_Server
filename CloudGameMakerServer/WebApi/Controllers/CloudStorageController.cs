@@ -6,8 +6,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.Json;
@@ -22,12 +20,12 @@ namespace WebApi.Controllers
     {
         private const string BucketName = "cloud-game-maker";
         private IAmazonS3 S3 { get; set; }
-        private IImageService ImageService { get; set; }
+        private IS3Service S3Service { get; set; }
 
-        public CloudStorageController(IAmazonS3 s3, IImageService imageService)
+        public CloudStorageController(IAmazonS3 s3, IS3Service s3Service)
         {
             S3 = s3;
-            ImageService = imageService;
+            S3Service = s3Service;
         }
 
         [HttpGet]
@@ -77,48 +75,10 @@ namespace WebApi.Controllers
 
             var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
             var sprite = JsonSerializer.Deserialize<SpriteFile>(spriteJson, option);
+            var key = $"sprites/{sprite.Name}.{sprite.Extension}";
+            await S3Service.GenerateThumbnail(file, BucketName, key).ConfigureAwait(false);
 
-            try
-            {
-                var key = $"sprites/{sprite.Name}.{sprite.Extension}";
-
-                using (var stream = new MemoryStream())
-                {
-                    await file.CopyToAsync(stream).ConfigureAwait(false);
-
-                    var request = new PutObjectRequest
-                    {
-                        BucketName = BucketName,
-                        Key = key,
-                        InputStream = stream,
-                        ContentType = sprite.Mime
-                    };
-
-                    await S3.PutObjectAsync(request).ConfigureAwait(false);
-                }
-
-                using (var stream = new MemoryStream())
-                {
-                    var thumbnail = await ImageService.GetThumbnailImage(100, 100, file).ConfigureAwait(false);
-                    thumbnail.Save(stream, ImageFormat.Png);
-
-                    var request = new PutObjectRequest
-                    {
-                        BucketName = BucketName,
-                        Key = $"thumbnails/{key}",
-                        InputStream = stream,
-                        ContentType = "image/png"
-                    };
-
-                    await S3.PutObjectAsync(request).ConfigureAwait(false);
-                }
-
-                return key;
-            }
-            catch
-            {
-                return null;
-            }
+            return await S3Service.UploadFile(file, BucketName, key, sprite.Mime).ConfigureAwait(false);
         }
 
         [HttpPut]
