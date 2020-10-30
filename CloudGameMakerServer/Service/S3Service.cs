@@ -74,14 +74,14 @@ namespace Service
                 using (var stream = new MemoryStream())
                 {
                     var thumbnail = await ImageService.GetThumbnailImage(width, height, file).ConfigureAwait(false);
-                    thumbnail.Save(stream, ImageFormat.Png);
+                    thumbnail.Save(stream, ImageFormat.Jpeg);
 
                     var request = new PutObjectRequest
                     {
                         BucketName = bucket,
                         Key = objectKey,
                         InputStream = stream,
-                        ContentType = "image/png"
+                        ContentType = "image/jpeg"
                     };
 
                     await S3.PutObjectAsync(request).ConfigureAwait(false);
