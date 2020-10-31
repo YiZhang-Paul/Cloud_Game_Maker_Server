@@ -4,7 +4,6 @@ using Core.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.Json;
@@ -31,11 +30,9 @@ namespace WebApi.Controllers
         [Route("sprites/{id}")]
         public async Task<IActionResult> GetSprite(string id)
         {
-            using var stream = new MemoryStream();
             var response = await S3.GetObjectAsync(BucketName, WebUtility.UrlDecode(id)).ConfigureAwait(false);
-            await response.ResponseStream.CopyToAsync(stream).ConfigureAwait(false);
 
-            return File(stream, "image/jpeg");
+            return File(response.ResponseStream, "image/jpeg");
         }
 
         [HttpGet]
