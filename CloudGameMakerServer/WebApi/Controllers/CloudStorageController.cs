@@ -35,9 +35,9 @@ namespace WebApi.Controllers
             return response.S3Objects.Select(_ => new SpriteFile
             {
                 Id = _.Key,
-                Name = Regex.Replace(_.Key, $"^.*/|\\.(jpg|png)$", string.Empty),
-                Mime = Regex.IsMatch(_.Key, "\\.png$") ? "image/png" : "image/jpeg",
-                Extension = Regex.IsMatch(_.Key, "\\.png$") ? "png" : "jpg",
+                Name = Regex.Replace(_.Key, $"^.*/|\\.jpg$", string.Empty),
+                Mime = "image/jpeg",
+                Extension = "jpg",
                 OriginalUrl = S3Service.GetPreSignedURL(BucketName, _.Key, 2),
                 ThumbnailUrl = S3Service.GetThumbnailPreSignedURL(BucketName, _.Key, 2)
             });
