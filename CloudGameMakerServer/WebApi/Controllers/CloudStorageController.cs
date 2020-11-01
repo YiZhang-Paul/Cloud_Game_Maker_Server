@@ -27,6 +27,19 @@ namespace WebApi.Controllers
             CloudStorageService = cloudStorageService;
         }
 
+        [HttpGet]
+        [Route("scenes")]
+        public async Task<IEnumerable<Scene>> GetScenes()
+        {
+            var response = await S3.ListObjectsAsync(BucketName, "scenes").ConfigureAwait(false);
+
+            return response.S3Objects.Select(_ => new Scene
+            {
+                Id = _.Key,
+                Name = Regex.Replace(_.Key, $"^.*/|\\.json$", string.Empty)
+            });
+        }
+
         [HttpPost]
         [Route("scenes")]
         public async Task<string> AddScene([FromBody]Scene scene)
