@@ -1,4 +1,3 @@
-using Amazon.S3;
 using Core.Models.GameScenes;
 using Core.Models.GameSprites;
 using Core.Services;
@@ -18,12 +17,10 @@ namespace WebApi.Controllers
     public class CloudStorageController : ControllerBase
     {
         private const string BucketName = "cloud-game-maker";
-        private IAmazonS3 S3 { get; set; }
         private ICloudStorageService CloudStorageService { get; set; }
 
-        public CloudStorageController(IAmazonS3 s3, ICloudStorageService cloudStorageService)
+        public CloudStorageController(ICloudStorageService cloudStorageService)
         {
-            S3 = s3;
             CloudStorageService = cloudStorageService;
         }
 
@@ -31,9 +28,9 @@ namespace WebApi.Controllers
         [Route("scenes")]
         public async Task<IEnumerable<Scene>> GetScenes()
         {
-            var response = await S3.ListObjectsAsync(BucketName, "scenes").ConfigureAwait(false);
+            var metas = await CloudStorageService.GetMetas(BucketName, "scenes").ConfigureAwait(false);
 
-            return response.S3Objects.Select(_ => new Scene
+            return metas.Select(_ => new Scene
             {
                 Id = _.Key,
                 Name = Regex.Replace(_.Key, $"^.*/|\\.json$", string.Empty)
@@ -59,18 +56,19 @@ namespace WebApi.Controllers
         [Route("sprites/{id}")]
         public async Task<IActionResult> GetSprite(string id)
         {
-            var response = await S3.GetObjectAsync(BucketName, WebUtility.UrlDecode(id)).ConfigureAwait(false);
+            var key = WebUtility.UrlDecode(id);
+            var file = await CloudStorageService.GetFile(BucketName, key).ConfigureAwait(false);
 
-            return File(response.ResponseStream, "image/jpeg");
+            return File(file, "image/jpeg");
         }
 
         [HttpGet]
         [Route("sprites")]
         public async Task<IEnumerable<SpriteFile>> GetSprites()
         {
-            var response = await S3.ListObjectsAsync(BucketName, "sprites").ConfigureAwait(false);
+            var metas = await CloudStorageService.GetMetas(BucketName, "sprites").ConfigureAwait(false);
 
-            return response.S3Objects.Select(_ => new SpriteFile
+            return metas.Select(_ => new SpriteFile
             {
                 Id = _.Key,
                 Name = Regex.Replace(_.Key, $"^.*/|\\.jpg$", string.Empty),

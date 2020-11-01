@@ -3,6 +3,7 @@ using Amazon.S3.Model;
 using Core.Services;
 using Microsoft.AspNetCore.Http;
 using System;
+using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Threading.Tasks;
@@ -36,6 +37,16 @@ namespace Service
         public string GetThumbnailPreSignedURL(string bucket, string key, double hours)
         {
             return GetPreSignedURL(bucket, $"{ThumbnailFolder}/{key}", hours);
+        }
+
+        public async Task<IEnumerable<S3Object>> GetMetas(string bucket, string folder)
+        {
+            return (await S3.ListObjectsAsync(bucket, folder).ConfigureAwait(false)).S3Objects;
+        }
+
+        public async Task<Stream> GetFile(string bucket, string key)
+        {
+            return (await S3.GetObjectAsync(bucket, key).ConfigureAwait(false)).ResponseStream;
         }
 
         public async Task<string> UploadFile(IFormFile file, string bucket, string key, string mime)
