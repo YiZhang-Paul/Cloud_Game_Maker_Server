@@ -18,12 +18,12 @@ namespace WebApi.Controllers
     {
         private const string BucketName = "cloud-game-maker";
         private IAmazonS3 S3 { get; set; }
-        private IS3Service S3Service { get; set; }
+        private ICloudStorageService CloudStorageService { get; set; }
 
-        public CloudStorageController(IAmazonS3 s3, IS3Service s3Service)
+        public CloudStorageController(IAmazonS3 s3, ICloudStorageService cloudStorageService)
         {
             S3 = s3;
-            S3Service = s3Service;
+            CloudStorageService = cloudStorageService;
         }
 
         [HttpGet]
@@ -47,8 +47,8 @@ namespace WebApi.Controllers
                 Name = Regex.Replace(_.Key, $"^.*/|\\.jpg$", string.Empty),
                 Mime = "image/jpeg",
                 Extension = "jpg",
-                OriginalUrl = S3Service.GetPreSignedURL(BucketName, _.Key, 2),
-                ThumbnailUrl = S3Service.GetThumbnailPreSignedURL(BucketName, _.Key, 2)
+                OriginalUrl = CloudStorageService.GetPreSignedURL(BucketName, _.Key, 2),
+                ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedURL(BucketName, _.Key, 2)
             });
         }
 
@@ -64,9 +64,9 @@ namespace WebApi.Controllers
             var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
             var sprite = JsonSerializer.Deserialize<SpriteFile>(spriteJson, option);
             var key = $"sprites/{sprite.Name}.{sprite.Extension}";
-            await S3Service.GenerateThumbnail(file, BucketName, key).ConfigureAwait(false);
+            await CloudStorageService.GenerateThumbnail(file, BucketName, key).ConfigureAwait(false);
 
-            return await S3Service.UploadFile(file, BucketName, key, sprite.Mime).ConfigureAwait(false);
+            return await CloudStorageService.UploadFile(file, BucketName, key, sprite.Mime).ConfigureAwait(false);
         }
 
         [HttpPut]
@@ -86,9 +86,9 @@ namespace WebApi.Controllers
         public async Task<bool> DeleteSprite(string id)
         {
             var key = WebUtility.UrlDecode(id);
-            _ = S3Service.DeleteThumbnail(BucketName, key).ConfigureAwait(false);
+            _ = CloudStorageService.DeleteThumbnail(BucketName, key).ConfigureAwait(false);
 
-            return await S3Service.DeleteFile(BucketName, key).ConfigureAwait(false);
+            return await CloudStorageService.DeleteFile(BucketName, key).ConfigureAwait(false);
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Core.Services
 {
-    public interface IS3Service
+    public interface ICloudStorageService
     {
         string GetPreSignedURL(string bucket, string key, double hours);
         string GetThumbnailPreSignedURL(string bucket, string key, double hours);

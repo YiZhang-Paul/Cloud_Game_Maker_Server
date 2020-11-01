@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 
 namespace Service
 {
-    public class S3Service : IS3Service
+    public class CloudStorageService : ICloudStorageService
     {
         private const string ThumbnailFolder = "thumbnails";
         private IAmazonS3 S3 { get; set; }
         private IImageService ImageService { get; set; }
 
-        public S3Service(IAmazonS3 s3, IImageService imageService)
+        public CloudStorageService(IAmazonS3 s3, IImageService imageService)
         {
             S3 = s3;
             ImageService = imageService;
