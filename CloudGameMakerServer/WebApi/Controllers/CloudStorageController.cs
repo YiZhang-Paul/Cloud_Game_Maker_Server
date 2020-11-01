@@ -1,4 +1,5 @@
 using Amazon.S3;
+using Core.Models.GameScenes;
 using Core.Models.GameSprites;
 using Core.Services;
 using Microsoft.AspNetCore.Http;
@@ -24,6 +25,21 @@ namespace WebApi.Controllers
         {
             S3 = s3;
             CloudStorageService = cloudStorageService;
+        }
+
+        [HttpPost]
+        [Route("scenes")]
+        public async Task<string> AddScene([FromBody]Scene scene)
+        {
+            if (string.IsNullOrWhiteSpace(scene?.Name))
+            {
+                return null;
+            }
+
+            var key = $"scenes/{scene.Name}.json";
+            var json = JsonSerializer.Serialize(scene);
+
+            return await CloudStorageService.UploadFile(json, BucketName, key, "application/json").ConfigureAwait(false);
         }
 
         [HttpGet]
