@@ -73,7 +73,7 @@ namespace WebApi.Controllers
         [Route("sprites/{originatedId}")]
         public async Task<string> UpdateSprite([FromForm]IFormFile file, [FromForm]string spriteJson, string originatedId)
         {
-            if (!await DeleteSprite(WebUtility.UrlDecode(originatedId)).ConfigureAwait(false))
+            if (!await DeleteSprite(originatedId).ConfigureAwait(false))
             {
                 return null;
             }
