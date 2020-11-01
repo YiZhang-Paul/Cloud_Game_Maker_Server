@@ -65,6 +65,27 @@ namespace Service
             }
         }
 
+        public async Task<string> UploadFile(string content, string bucket, string key, string mime)
+        {
+            try
+            {
+                var request = new PutObjectRequest
+                {
+                    BucketName = bucket,
+                    Key = key,
+                    ContentBody = content
+                };
+
+                await S3.PutObjectAsync(request).ConfigureAwait(false);
+
+                return key;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public async Task<string> GenerateThumbnail(IFormFile file, string bucket, string key, int width = 100, int height = 100)
         {
             try
