@@ -52,6 +52,25 @@ namespace WebApi.Controllers
             return await CloudStorageService.UploadFile(json, BucketName, key, "application/json").ConfigureAwait(false);
         }
 
+        [HttpPut]
+        [Route("scenes")]
+        public async Task<string> UpdateScene([FromBody]Scene scene)
+        {
+            if (!await DeleteScene(scene.Id).ConfigureAwait(false))
+            {
+                return null;
+            }
+
+            return await AddScene(scene).ConfigureAwait(false);
+        }
+
+        [HttpDelete]
+        [Route("scenes/{id}")]
+        public async Task<bool> DeleteScene(string id)
+        {
+            return await CloudStorageService.DeleteFile(BucketName, WebUtility.UrlDecode(id)).ConfigureAwait(false);
+        }
+
         [HttpGet]
         [Route("sprites/{id}")]
         public async Task<IActionResult> GetSprite(string id)
