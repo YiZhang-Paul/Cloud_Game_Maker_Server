@@ -1,11 +1,9 @@
-using Amazon.S3;
-using Amazon.S3.Model;
+using Core.Models.GameScenes;
 using Core.Models.GameSprites;
+using Core.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.Json;
@@ -19,38 +17,84 @@ namespace WebApi.Controllers
     public class CloudStorageController : ControllerBase
     {
         private const string BucketName = "cloud-game-maker";
-        private IAmazonS3 S3 { get; set; }
+        private ICloudStorageService CloudStorageService { get; set; }
 
-        public CloudStorageController(IAmazonS3 s3)
+        public CloudStorageController(ICloudStorageService cloudStorageService)
         {
-            S3 = s3;
+            CloudStorageService = cloudStorageService;
+        }
+
+        [HttpGet]
+        [Route("scenes")]
+        public async Task<IEnumerable<Scene>> GetScenes()
+        {
+            var metas = await CloudStorageService.GetMetas(BucketName, "scenes").ConfigureAwait(false);
+
+            return metas.Select(_ => new Scene
+            {
+                Id = _.Key,
+                Name = Regex.Replace(_.Key, $"^.*/|\\.json$", string.Empty)
+            });
+        }
+
+        [HttpPost]
+        [Route("scenes")]
+        public async Task<string> AddScene([FromBody]Scene scene)
+        {
+            if (string.IsNullOrWhiteSpace(scene?.Name))
+            {
+                return null;
+            }
+
+            var key = $"scenes/{scene.Name}.json";
+            var json = JsonSerializer.Serialize(scene);
+
+            return await CloudStorageService.UploadFile(json, BucketName, key, "application/json").ConfigureAwait(false);
+        }
+
+        [HttpPut]
+        [Route("scenes")]
+        public async Task<string> UpdateScene([FromBody]Scene scene)
+        {
+            if (!await DeleteScene(scene.Id).ConfigureAwait(false))
+            {
+                return null;
+            }
+
+            return await AddScene(scene).ConfigureAwait(false);
+        }
+
+        [HttpDelete]
+        [Route("scenes/{id}")]
+        public async Task<bool> DeleteScene(string id)
+        {
+            return await CloudStorageService.DeleteFile(BucketName, WebUtility.UrlDecode(id)).ConfigureAwait(false);
+        }
+
+        [HttpGet]
+        [Route("sprites/{id}")]
+        public async Task<IActionResult> GetSprite(string id)
+        {
+            var key = WebUtility.UrlDecode(id);
+            var file = await CloudStorageService.GetFile(BucketName, key).ConfigureAwait(false);
+
+            return File(file, "image/jpeg");
         }
 
         [HttpGet]
         [Route("sprites")]
         public async Task<IEnumerable<SpriteFile>> GetSprites()
         {
-            var response = await S3.ListObjectsAsync(BucketName, "sprites").ConfigureAwait(false);
+            var metas = await CloudStorageService.GetMetas(BucketName, "sprites").ConfigureAwait(false);
 
-            return response.S3Objects.Select(_ =>
+            return metas.Select(_ => new SpriteFile
             {
-                var isPng = Regex.IsMatch(_.Key, "\\.png$");
-
-                var request = new GetPreSignedUrlRequest
-                {
-                    BucketName = BucketName,
-                    Key = _.Key,
-                    Expires = DateTime.UtcNow.AddHours(2)
-                };
-
-                return new SpriteFile
-                {
-                    Id = _.Key,
-                    Name = Regex.Replace(_.Key, $"^.*/|\\.(jpg|png)$", string.Empty),
-                    Mime = isPng ? "image/png" : "image/jpeg",
-                    Extension = isPng ? "png" : "jpg",
-                    Url = S3.GetPreSignedURL(request)
-                };
+                Id = _.Key,
+                Name = Regex.Replace(_.Key, $"^.*/|\\.jpg$", string.Empty),
+                Mime = "image/jpeg",
+                Extension = "jpg",
+                OriginalUrl = CloudStorageService.GetPreSignedURL(BucketName, _.Key, 2),
+                ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedURL(BucketName, _.Key, 2)
             });
         }
 
@@ -65,39 +109,17 @@ namespace WebApi.Controllers
 
             var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
             var sprite = JsonSerializer.Deserialize<SpriteFile>(spriteJson, option);
+            var key = $"sprites/{sprite.Name}.{sprite.Extension}";
+            await CloudStorageService.GenerateThumbnail(file, BucketName, key).ConfigureAwait(false);
 
-            try
-            {
-                var key = $"sprites/{sprite.Name}.{sprite.Extension}";
-
-                using (var stream = new MemoryStream())
-                {
-                    await file.CopyToAsync(stream).ConfigureAwait(false);
-
-                    var request = new PutObjectRequest
-                    {
-                        BucketName = BucketName,
-                        Key = key,
-                        InputStream = stream,
-                        ContentType = sprite.Mime
-                    };
-
-                    await S3.PutObjectAsync(request).ConfigureAwait(false);
-                }
-
-                return key;
-            }
-            catch
-            {
-                return null;
-            }
+            return await CloudStorageService.UploadFile(file, BucketName, key, sprite.Mime).ConfigureAwait(false);
         }
 
         [HttpPut]
         [Route("sprites/{originatedId}")]
         public async Task<string> UpdateSprite([FromForm]IFormFile file, [FromForm]string spriteJson, string originatedId)
         {
-            if (!await DeleteSprite(WebUtility.UrlDecode(originatedId)).ConfigureAwait(false))
+            if (!await DeleteSprite(originatedId).ConfigureAwait(false))
             {
                 return null;
             }
@@ -109,19 +131,10 @@ namespace WebApi.Controllers
         [Route("sprites/{id}")]
         public async Task<bool> DeleteSprite(string id)
         {
-            try
-            {
-                var key = WebUtility.UrlDecode(id);
-                // will throw error when object does not exist
-                await S3.GetObjectMetadataAsync(BucketName, key).ConfigureAwait(false);
-                await S3.DeleteObjectAsync(BucketName, key).ConfigureAwait(false);
+            var key = WebUtility.UrlDecode(id);
+            _ = CloudStorageService.DeleteThumbnail(BucketName, key).ConfigureAwait(false);
 
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await CloudStorageService.DeleteFile(BucketName, key).ConfigureAwait(false);
         }
     }
 }
