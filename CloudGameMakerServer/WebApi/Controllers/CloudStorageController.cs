@@ -46,10 +46,11 @@ namespace WebApi.Controllers
                 return null;
             }
 
-            var key = $"scenes/{scene.Name}.json";
-            var json = JsonSerializer.Serialize(scene);
+            scene.Id = $"scenes/{scene.Name}.json";
+            var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var json = JsonSerializer.Serialize(scene, option);
 
-            return await CloudStorageService.UploadFile(json, BucketName, key, "application/json").ConfigureAwait(false);
+            return await CloudStorageService.UploadFile(json, BucketName, scene.Id, "application/json").ConfigureAwait(false);
         }
 
         [HttpPut]
