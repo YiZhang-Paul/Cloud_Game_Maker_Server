@@ -3,6 +3,7 @@ using Core.Models.GameSprites;
 using Core.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -35,6 +36,23 @@ namespace WebApi.Controllers
                 Id = _.Key,
                 Name = Regex.Replace(_.Key, $"^.*/|\\.json$", string.Empty)
             });
+        }
+
+        [HttpGet]
+        [Route("scenes/{id}")]
+        public async Task<Scene> GetScene(string id)
+        {
+            var key = WebUtility.UrlDecode(id);
+            var file = await CloudStorageService.GetFile(BucketName, key).ConfigureAwait(false);
+
+            using (var reader = new StreamReader(file))
+            {
+                var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+                var scene = JsonSerializer.Deserialize<Scene>(reader.ReadToEnd(), option);
+                scene.Id = key;
+
+                return scene;
+            }
         }
 
         [HttpPost]
