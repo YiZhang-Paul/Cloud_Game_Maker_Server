@@ -7,6 +7,7 @@ namespace Core.Models.GameScenes
     {
         public string Id { get; set; }
         public string Name { get; set; }
+        public int Scale { get; set; }
         public Point ViewportXY { get; set; }
         public List<SceneLayer> Layers { get; set; }
     }
