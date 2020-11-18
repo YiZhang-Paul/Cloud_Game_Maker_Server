@@ -3,6 +3,7 @@ using Core.Models.GameSprites;
 using Core.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -37,6 +38,23 @@ namespace WebApi.Controllers
             });
         }
 
+        [HttpGet]
+        [Route("scenes/{id}")]
+        public async Task<Scene> GetScene(string id)
+        {
+            var key = WebUtility.UrlDecode(id);
+            var file = await CloudStorageService.GetFile(BucketName, key).ConfigureAwait(false);
+
+            using (var reader = new StreamReader(file))
+            {
+                var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+                var scene = JsonSerializer.Deserialize<Scene>(reader.ReadToEnd(), option);
+                scene.Id = key;
+
+                return scene;
+            }
+        }
+
         [HttpPost]
         [Route("scenes")]
         public async Task<string> AddScene([FromBody]Scene scene)
@@ -46,10 +64,11 @@ namespace WebApi.Controllers
                 return null;
             }
 
-            var key = $"scenes/{scene.Name}.json";
-            var json = JsonSerializer.Serialize(scene);
+            scene.Id = $"scenes/{scene.Name}.json";
+            var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var json = JsonSerializer.Serialize(scene, option);
 
-            return await CloudStorageService.UploadFile(json, BucketName, key, "application/json").ConfigureAwait(false);
+            return await CloudStorageService.UploadFile(json, BucketName, scene.Id, "application/json").ConfigureAwait(false);
         }
 
         [HttpPut]
