@@ -112,8 +112,8 @@ namespace WebApi.Controllers
                 Name = Regex.Replace(_.Key, $"^.*/|\\.jpg$", string.Empty),
                 Mime = "image/jpeg",
                 Extension = "jpg",
-                OriginalUrl = CloudStorageService.GetPreSignedURL(BucketName, _.Key, 2),
-                ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedURL(BucketName, _.Key, 2)
+                OriginalUrl = CloudStorageService.GetPreSignedURL(BucketName, _.Key, 6),
+                ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedURL(BucketName, _.Key, 6)
             });
         }
 
