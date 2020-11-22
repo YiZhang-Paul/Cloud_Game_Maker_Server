@@ -3,8 +3,8 @@ using Core.Models.GameSprites;
 using Core.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.Json;
@@ -51,6 +51,19 @@ namespace WebApi.Controllers
                 var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
                 var scene = JsonSerializer.Deserialize<Scene>(reader.ReadToEnd(), option);
                 scene.Id = key;
+
+                foreach (var layer in scene.Layers)
+                {
+                    foreach (var spriteId in layer.Sprites.Keys)
+                    {
+                        var url = layer.Sprites[spriteId].ThumbnailUrl;
+
+                        if (CloudStorageService.IsPreSignedUrlExpired(url))
+                        {
+                            layer.Sprites[spriteId].ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedUrl(BucketName, spriteId, UrlTimeAlive);
+                        }
+                    }
+                }
 
                 return scene;
             }
