@@ -112,14 +112,14 @@ namespace WebApi.Controllers
                 Name = Regex.Replace(_.Key, $"^.*/|\\.jpg$", string.Empty),
                 Mime = "image/jpeg",
                 Extension = "jpg",
-                OriginalUrl = CloudStorageService.GetPreSignedURL(BucketName, _.Key, 6),
-                ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedURL(BucketName, _.Key, 6)
+                OriginalUrl = CloudStorageService.GetPreSignedURL(BucketName, _.Key, 0.1),
+                ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedURL(BucketName, _.Key, 0.1)
             });
         }
 
         [HttpPost]
         [Route("sprites")]
-        public async Task<string> AddSprite([FromForm]IFormFile file, [FromForm]string spriteJson)
+        public async Task<SpriteFile> AddSprite([FromForm]IFormFile file, [FromForm]string spriteJson)
         {
             if (file == null || spriteJson == null)
             {
@@ -130,13 +130,22 @@ namespace WebApi.Controllers
             var sprite = JsonSerializer.Deserialize<SpriteFile>(spriteJson, option);
             var key = $"sprites/{sprite.Name}.{sprite.Extension}";
             await CloudStorageService.GenerateThumbnail(file, BucketName, key).ConfigureAwait(false);
+            sprite.Id = await CloudStorageService.UploadFile(file, BucketName, key, sprite.Mime).ConfigureAwait(false);
 
-            return await CloudStorageService.UploadFile(file, BucketName, key, sprite.Mime).ConfigureAwait(false);
+            if (sprite.Id == null)
+            {
+                return null;
+            }
+
+            sprite.OriginalUrl = CloudStorageService.GetPreSignedURL(BucketName, sprite.Id, 0.1);
+            sprite.ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedURL(BucketName, sprite.Id, 0.1);
+
+            return sprite;
         }
 
         [HttpPut]
         [Route("sprites/{originatedId}")]
-        public async Task<string> UpdateSprite([FromForm]IFormFile file, [FromForm]string spriteJson, string originatedId)
+        public async Task<SpriteFile> UpdateSprite([FromForm]IFormFile file, [FromForm]string spriteJson, string originatedId)
         {
             if (!await DeleteSprite(originatedId).ConfigureAwait(false))
             {
