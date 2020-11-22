@@ -22,7 +22,7 @@ namespace Service
             ImageService = imageService;
         }
 
-        public string GetPreSignedURL(string bucket, string key, double hours)
+        public string GetPreSignedUrl(string bucket, string key, double hours)
         {
             var request = new GetPreSignedUrlRequest
             {
@@ -34,9 +34,9 @@ namespace Service
             return S3.GetPreSignedURL(request);
         }
 
-        public string GetThumbnailPreSignedURL(string bucket, string key, double hours)
+        public string GetThumbnailPreSignedUrl(string bucket, string key, double hours)
         {
-            return GetPreSignedURL(bucket, $"{ThumbnailFolder}/{key}", hours);
+            return GetPreSignedUrl(bucket, $"{ThumbnailFolder}/{key}", hours);
         }
 
         public async Task<IEnumerable<S3Object>> GetMetas(string bucket, string folder)

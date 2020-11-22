@@ -18,6 +18,7 @@ namespace WebApi.Controllers
     public class CloudStorageController : ControllerBase
     {
         private const string BucketName = "cloud-game-maker";
+        private const double UrlTimeAlive = 8;
         private ICloudStorageService CloudStorageService { get; set; }
 
         public CloudStorageController(ICloudStorageService cloudStorageService)
@@ -112,8 +113,8 @@ namespace WebApi.Controllers
                 Name = Regex.Replace(_.Key, $"^.*/|\\.jpg$", string.Empty),
                 Mime = "image/jpeg",
                 Extension = "jpg",
-                OriginalUrl = CloudStorageService.GetPreSignedURL(BucketName, _.Key, 0.1),
-                ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedURL(BucketName, _.Key, 0.1)
+                OriginalUrl = CloudStorageService.GetPreSignedUrl(BucketName, _.Key, UrlTimeAlive),
+                ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedUrl(BucketName, _.Key, UrlTimeAlive)
             });
         }
 
@@ -137,8 +138,8 @@ namespace WebApi.Controllers
                 return null;
             }
 
-            sprite.OriginalUrl = CloudStorageService.GetPreSignedURL(BucketName, sprite.Id, 0.1);
-            sprite.ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedURL(BucketName, sprite.Id, 0.1);
+            sprite.OriginalUrl = CloudStorageService.GetPreSignedUrl(BucketName, sprite.Id, UrlTimeAlive);
+            sprite.ThumbnailUrl = CloudStorageService.GetThumbnailPreSignedUrl(BucketName, sprite.Id, UrlTimeAlive);
 
             return sprite;
         }
