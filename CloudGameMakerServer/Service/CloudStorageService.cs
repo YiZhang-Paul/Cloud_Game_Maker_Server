@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Service
@@ -37,6 +39,22 @@ namespace Service
         public string GetThumbnailPreSignedUrl(string bucket, string key, double hours)
         {
             return GetPreSignedUrl(bucket, $"{ThumbnailFolder}/{key}", hours);
+        }
+
+        public bool IsPreSignedUrlExpired(string url)
+        {
+            var timeAliveString = Regex.Match(url, @"(?<=X-Amz-Expires=)[^&]+").Value;
+            var creationDateString = Regex.Match(url, @"(?<=X-Amz-Date=)[^Z]+").Value;
+
+            if (timeAliveString == null || creationDateString == null)
+            {
+                return false;
+            }
+
+            var isValidTime = double.TryParse(timeAliveString, out var timeAlive);
+            var isValidDate = DateTime.TryParseExact(creationDateString, "yyyyMMddTHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var creationDate);
+
+            return isValidTime && isValidDate && creationDate.AddSeconds(timeAlive) < DateTime.UtcNow;
         }
 
         public async Task<IEnumerable<S3Object>> GetMetas(string bucket, string folder)
