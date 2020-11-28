@@ -28,11 +28,11 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("scenes")]
-        public async Task<IEnumerable<Scene>> GetScenes()
+        public async Task<IEnumerable<SceneDescriptor>> GetScenes()
         {
             var metas = await CloudStorageService.GetMetas(BucketName, "scenes").ConfigureAwait(false);
 
-            return metas.Select(_ => new Scene
+            return metas.Select(_ => new SceneDescriptor
             {
                 Id = _.Key,
                 Name = Regex.Replace(_.Key, $"^.*/|\\.json$", string.Empty)
