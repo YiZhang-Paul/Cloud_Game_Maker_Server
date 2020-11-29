@@ -8,8 +8,9 @@ namespace Core.Services
 {
     public interface ICloudStorageService
     {
-        string GetPreSignedURL(string bucket, string key, double hours);
-        string GetThumbnailPreSignedURL(string bucket, string key, double hours);
+        string GetPreSignedUrl(string bucket, string key, double hours);
+        string GetThumbnailPreSignedUrl(string bucket, string key, double hours);
+        bool IsPreSignedUrlExpired(string url);
         Task<IEnumerable<S3Object>> GetMetas(string bucket, string folder);
         Task<Stream> GetFile(string bucket, string key);
         Task<string> UploadFile(IFormFile file, string bucket, string key, string mime);
