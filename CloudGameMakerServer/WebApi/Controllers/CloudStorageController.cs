@@ -55,7 +55,7 @@ namespace WebApi.Controllers
             {
                 var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
                 var scene = JsonSerializer.Deserialize<Scene>(reader.ReadToEnd(), option);
-                scene.Id = key;
+                scene.StorageKey = key;
 
                 foreach (var layer in scene.Layers)
                 {
@@ -92,14 +92,14 @@ namespace WebApi.Controllers
         [Route("scenes")]
         public async Task<bool> UpdateScene([FromBody]Scene scene)
         {
-            var descriptor = await SceneDescriptorRepository.GetByStorageKey(scene.Id).ConfigureAwait(false);
+            var descriptor = await SceneDescriptorRepository.GetByStorageKey(scene.StorageKey).ConfigureAwait(false);
 
             if (descriptor == null)
             {
                 return false;
             }
 
-            var key = await UploadScene(scene, scene.Id).ConfigureAwait(false);
+            var key = await UploadScene(scene, scene.StorageKey).ConfigureAwait(false);
 
             if (key != null)
             {
