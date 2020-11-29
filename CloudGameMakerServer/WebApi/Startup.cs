@@ -1,4 +1,5 @@
 using Amazon.S3;
+using Core.Models.Configurations;
 using Core.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -31,6 +32,7 @@ namespace WebApi
             services.AddAWSService<IAmazonS3>();
             services.AddSingleton<IImageService, ImageService>();
             services.AddSingleton<ICloudStorageService, CloudStorageService>();
+            services.Configure<DatabaseConfiguration>(Configuration.GetSection(DatabaseConfiguration.Key));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
