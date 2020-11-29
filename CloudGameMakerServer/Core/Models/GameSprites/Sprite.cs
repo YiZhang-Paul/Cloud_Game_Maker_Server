@@ -1,6 +1,6 @@
 namespace Core.Models.GameSprites
 {
-    public class SpriteFile
+    public class Sprite
     {
         public string Originated { get; set; }
         public string Id { get; set; }

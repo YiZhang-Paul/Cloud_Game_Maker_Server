@@ -116,11 +116,11 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("sprites")]
-        public async Task<IEnumerable<SpriteFile>> GetSprites()
+        public async Task<IEnumerable<Sprite>> GetSprites()
         {
             var metas = await CloudStorageService.GetMetas(BucketName, "sprites").ConfigureAwait(false);
 
-            return metas.Select(_ => new SpriteFile
+            return metas.Select(_ => new Sprite
             {
                 Id = _.Key,
                 Name = Regex.Replace(_.Key, $"^.*/|\\.jpg$", string.Empty),
@@ -133,7 +133,7 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("sprites")]
-        public async Task<SpriteFile> AddSprite([FromForm]IFormFile file, [FromForm]string spriteJson)
+        public async Task<Sprite> AddSprite([FromForm]IFormFile file, [FromForm]string spriteJson)
         {
             if (file == null || spriteJson == null)
             {
@@ -141,7 +141,7 @@ namespace WebApi.Controllers
             }
 
             var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-            var sprite = JsonSerializer.Deserialize<SpriteFile>(spriteJson, option);
+            var sprite = JsonSerializer.Deserialize<Sprite>(spriteJson, option);
             var key = $"sprites/{sprite.Name}.{sprite.Extension}";
             await CloudStorageService.GenerateThumbnail(file, BucketName, key).ConfigureAwait(false);
             sprite.Id = await CloudStorageService.UploadFile(file, BucketName, key, sprite.Mime).ConfigureAwait(false);
@@ -159,7 +159,7 @@ namespace WebApi.Controllers
 
         [HttpPut]
         [Route("sprites/{originatedId}")]
-        public async Task<SpriteFile> UpdateSprite([FromForm]IFormFile file, [FromForm]string spriteJson, string originatedId)
+        public async Task<Sprite> UpdateSprite([FromForm]IFormFile file, [FromForm]string spriteJson, string originatedId)
         {
             if (!await DeleteSprite(originatedId).ConfigureAwait(false))
             {
