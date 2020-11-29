@@ -41,7 +41,7 @@ namespace WebApi.Controllers
         [Route("scenes/{id}")]
         public async Task<Scene> GetScene(string id)
         {
-            var descriptor = await SceneDescriptorRepository.GetByStorageKey(id).ConfigureAwait(false);
+            var descriptor = await SceneDescriptorRepository.Get(id).ConfigureAwait(false);
 
             if (descriptor == null)
             {
