@@ -34,7 +34,7 @@ namespace WebApi.Controllers
 
             return metas.Select(_ => new SceneDescriptor
             {
-                Id = _.Key,
+                StorageKey = _.Key,
                 Name = Regex.Replace(_.Key, $"^.*/|\\.json$", string.Empty)
             });
         }

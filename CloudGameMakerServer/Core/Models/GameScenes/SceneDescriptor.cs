@@ -1,8 +1,8 @@
 namespace Core.Models.GameScenes
 {
-    public class SceneDescriptor
+    public class SceneDescriptor : DatabaseRecord
     {
-        public string Id { get; set; }
+        public string StorageKey { get; set; }
         public string Name { get; set; }
     }
 }
