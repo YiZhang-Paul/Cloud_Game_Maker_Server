@@ -1,8 +1,10 @@
 using Core.Models.GameScenes;
 using Core.Models.GameSprites;
 using Core.Services;
+using Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,30 +22,33 @@ namespace WebApi.Controllers
         private const string BucketName = "cloud-game-maker";
         private const double UrlTimeAlive = 8;
         private ICloudStorageService CloudStorageService { get; set; }
+        private SceneDescriptorRepository SceneDescriptorRepository { get; set; }
 
-        public CloudStorageController(ICloudStorageService cloudStorageService)
+        public CloudStorageController(ICloudStorageService cloudStorageService, SceneDescriptorRepository sceneDescriptorRepository)
         {
             CloudStorageService = cloudStorageService;
+            SceneDescriptorRepository = sceneDescriptorRepository;
         }
 
         [HttpGet]
         [Route("scenes")]
-        public async Task<IEnumerable<SceneDescriptor>> GetScenes()
+        public async Task<IEnumerable<SceneDescriptor>> GetSceneDescriptors([FromQuery]int limit = 0)
         {
-            var metas = await CloudStorageService.GetMetas(BucketName, "scenes").ConfigureAwait(false);
-
-            return metas.Select(_ => new SceneDescriptor
-            {
-                StorageKey = _.Key,
-                Name = Regex.Replace(_.Key, $"^.*/|\\.json$", string.Empty)
-            });
+            return await SceneDescriptorRepository.Get(limit).ConfigureAwait(false);
         }
 
         [HttpGet]
         [Route("scenes/{id}")]
         public async Task<Scene> GetScene(string id)
         {
-            var key = WebUtility.UrlDecode(id);
+            var descriptor = await SceneDescriptorRepository.GetByStorageKey(id).ConfigureAwait(false);
+
+            if (descriptor == null)
+            {
+                return null;
+            }
+
+            var key = WebUtility.UrlDecode(descriptor.StorageKey);
             var file = await CloudStorageService.GetFile(BucketName, key).ConfigureAwait(false);
 
             using (var reader = new StreamReader(file))
@@ -73,35 +78,71 @@ namespace WebApi.Controllers
         [Route("scenes")]
         public async Task<string> AddScene([FromBody]Scene scene)
         {
+            var key = await UploadScene(scene, $"scenes/{Guid.NewGuid()}.json").ConfigureAwait(false);
+
+            if (key != null)
+            {
+                await SceneDescriptorRepository.Add(new SceneDescriptor { StorageKey = key, Name = scene.Name });
+            }
+
+            return key;
+        }
+
+        [HttpPut]
+        [Route("scenes")]
+        public async Task<bool> UpdateScene([FromBody]Scene scene)
+        {
+            var descriptor = await SceneDescriptorRepository.GetByStorageKey(scene.Id).ConfigureAwait(false);
+
+            if (descriptor == null)
+            {
+                return false;
+            }
+
+            var key = await UploadScene(scene, scene.Id).ConfigureAwait(false);
+
+            if (key != null)
+            {
+                descriptor.Name = scene.Name;
+                await SceneDescriptorRepository.Replace(descriptor).ConfigureAwait(false);
+            }
+
+            return key != null;
+        }
+
+        private async Task<string> UploadScene(Scene scene, string key)
+        {
             if (string.IsNullOrWhiteSpace(scene?.Name))
             {
                 return null;
             }
 
-            scene.Id = $"scenes/{scene.Name}.json";
             var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
             var json = JsonSerializer.Serialize(scene, option);
 
-            return await CloudStorageService.UploadFile(json, BucketName, scene.Id, "application/json").ConfigureAwait(false);
-        }
-
-        [HttpPut]
-        [Route("scenes")]
-        public async Task<string> UpdateScene([FromBody]Scene scene)
-        {
-            if (!await DeleteScene(scene.Id).ConfigureAwait(false))
-            {
-                return null;
-            }
-
-            return await AddScene(scene).ConfigureAwait(false);
+            return await CloudStorageService.UploadFile(json, BucketName, key, "application/json").ConfigureAwait(false);
         }
 
         [HttpDelete]
         [Route("scenes/{id}")]
         public async Task<bool> DeleteScene(string id)
         {
-            return await CloudStorageService.DeleteFile(BucketName, WebUtility.UrlDecode(id)).ConfigureAwait(false);
+            var descriptor = await SceneDescriptorRepository.Get(id).ConfigureAwait(false);
+
+            if (descriptor == null)
+            {
+                return false;
+            }
+
+            var key = WebUtility.UrlDecode(descriptor.StorageKey);
+            var deleted = await CloudStorageService.DeleteFile(BucketName, key).ConfigureAwait(false);
+
+            if (deleted)
+            {
+                await SceneDescriptorRepository.Delete(descriptor.Id).ConfigureAwait(false);
+            }
+
+            return deleted;
         }
 
         [HttpGet]
