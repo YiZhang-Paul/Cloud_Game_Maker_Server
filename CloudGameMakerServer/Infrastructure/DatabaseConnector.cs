@@ -1,3 +1,5 @@
+using Core.Models.Configurations;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
 namespace Infrastructure
@@ -6,14 +8,14 @@ namespace Infrastructure
     {
         protected IMongoCollection<T> Collection { get; set; }
 
-        public DatabaseConnector(string url, string collection)
+        public DatabaseConnector(IOptions<DatabaseConfiguration> configuration, string collection)
         {
-            Collection = Connect(url, collection);
+            Collection = Connect(configuration.Value, collection);
         }
 
-        public IMongoCollection<T> Connect(string url, string collection)
+        public IMongoCollection<T> Connect(DatabaseConfiguration configuration, string collection)
         {
-            var database = new MongoClient(url).GetDatabase("cloud_game_maker");
+            var database = new MongoClient(configuration.Url).GetDatabase(configuration.Name);
 
             return database.GetCollection<T>(collection);
         }
