@@ -55,16 +55,19 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("scenes")]
-        public async Task<string> AddScene([FromBody]Scene scene)
+        public async Task<SceneDescriptor> AddScene([FromBody]Scene scene)
         {
             var key = await UploadScene(scene, $"scenes/{Guid.NewGuid()}.json").ConfigureAwait(false);
 
-            if (key != null)
+            if (key == null)
             {
-                await SceneDescriptorRepository.Add(new SceneDescriptor { StorageKey = key, Name = scene.Name });
+                return null;
             }
 
-            return key;
+            var descriptor = new SceneDescriptor { StorageKey = key, Name = scene.Name };
+            await SceneDescriptorRepository.Add(descriptor);
+
+            return descriptor.Id == null ? null : descriptor;
         }
 
         [HttpPut]
