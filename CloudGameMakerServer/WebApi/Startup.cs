@@ -33,7 +33,8 @@ namespace WebApi
             services.AddAWSService<IAmazonS3>();
             services.AddSingleton<IImageService, ImageService>();
             services.AddSingleton<ICloudStorageService, CloudStorageService>();
-            services.AddTransient<SceneDescriptorRepository, SceneDescriptorRepository>();
+            services.AddSingleton<IGameSceneService, GameSceneService>();
+            services.AddScoped<SceneDescriptorRepository, SceneDescriptorRepository>();
             services.Configure<DatabaseConfiguration>(Configuration.GetSection(DatabaseConfiguration.Key));
             services.Configure<S3Configuration>(Configuration.GetSection(S3Configuration.Key));
         }
