@@ -1,8 +1,6 @@
 using Core.Models.Configurations;
-using Core.Models.GameScenes;
 using Core.Models.GameSprites;
 using Core.Services;
-using Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -16,61 +14,20 @@ using System.Threading.Tasks;
 namespace WebApi.Controllers
 {
     [ApiController]
-    [Route("api/cloud-storage")]
+    [Route("api/v1/cloud-storage")]
     public class CloudStorageController : ControllerBase
     {
         private S3Configuration S3Configuration { get; set; }
-        private SceneDescriptorRepository SceneDescriptorRepository { get; set; }
         private ICloudStorageService CloudStorageService { get; set; }
-        private IGameSceneService GameSceneService { get; set; }
 
         public CloudStorageController
         (
             IOptions<S3Configuration> s3Configuration,
-            SceneDescriptorRepository sceneDescriptorRepository,
-            ICloudStorageService cloudStorageService,
-            IGameSceneService gameSceneService
+            ICloudStorageService cloudStorageService
         )
         {
             S3Configuration = s3Configuration.Value;
-            SceneDescriptorRepository = sceneDescriptorRepository;
             CloudStorageService = cloudStorageService;
-            GameSceneService = gameSceneService;
-        }
-
-        [HttpGet]
-        [Route("scenes")]
-        public async Task<IEnumerable<SceneDescriptor>> GetSceneDescriptors([FromQuery]int limit = 0)
-        {
-            return await SceneDescriptorRepository.Get(limit).ConfigureAwait(false);
-        }
-
-        [HttpGet]
-        [Route("scenes/{id}")]
-        public async Task<Scene> GetScene(string id)
-        {
-            return await GameSceneService.GetScene(id).ConfigureAwait(false);
-        }
-
-        [HttpPost]
-        [Route("scenes")]
-        public async Task<SceneDescriptor> AddScene([FromBody]Scene scene)
-        {
-            return await GameSceneService.AddScene(scene).ConfigureAwait(false);
-        }
-
-        [HttpPut]
-        [Route("scenes")]
-        public async Task<bool> UpdateScene([FromBody]Scene scene)
-        {
-            return await GameSceneService.UpdateScene(scene).ConfigureAwait(false);
-        }
-
-        [HttpDelete]
-        [Route("scenes/{id}")]
-        public async Task<bool> DeleteScene(string id)
-        {
-            return await GameSceneService.DeleteScene(id).ConfigureAwait(false);
         }
 
         [HttpGet]
