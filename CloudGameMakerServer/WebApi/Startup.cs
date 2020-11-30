@@ -35,6 +35,7 @@ namespace WebApi
             services.AddSingleton<ICloudStorageService, CloudStorageService>();
             services.AddTransient<SceneDescriptorRepository, SceneDescriptorRepository>();
             services.Configure<DatabaseConfiguration>(Configuration.GetSection(DatabaseConfiguration.Key));
+            services.Configure<S3Configuration>(Configuration.GetSection(S3Configuration.Key));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
