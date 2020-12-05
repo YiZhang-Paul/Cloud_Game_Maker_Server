@@ -121,21 +121,18 @@ namespace Service
 
         private Scene RenewPreSignedUrls(Scene scene)
         {
-            foreach (var layer in scene.Layers)
+            foreach (var spriteId in scene.Sprites.Keys)
             {
-                foreach (var spriteId in layer.Sprites.Keys)
+                var url = scene.Sprites[spriteId].ThumbnailUrl;
+
+                if (!CloudStorageService.IsPreSignedUrlExpired(url))
                 {
-                    var url = layer.Sprites[spriteId].ThumbnailUrl;
-
-                    if (!CloudStorageService.IsPreSignedUrlExpired(url))
-                    {
-                        continue;
-                    }
-
-                    var (bucketName, urlTimeAlive) = S3Configuration;
-                    var renewed = CloudStorageService.GetThumbnailPreSignedUrl(bucketName, spriteId, urlTimeAlive);
-                    layer.Sprites[spriteId].ThumbnailUrl = renewed;
+                    continue;
                 }
+
+                var (bucketName, urlTimeAlive) = S3Configuration;
+                var renewed = CloudStorageService.GetThumbnailPreSignedUrl(bucketName, spriteId, urlTimeAlive);
+                scene.Sprites[spriteId].ThumbnailUrl = renewed;
             }
 
             return scene;
