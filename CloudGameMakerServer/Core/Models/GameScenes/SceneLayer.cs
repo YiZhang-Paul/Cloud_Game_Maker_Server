@@ -1,4 +1,3 @@
-using Core.Models.GameSprites;
 using System.Collections.Generic;
 
 namespace Core.Models.GameScenes
@@ -9,7 +8,7 @@ namespace Core.Models.GameScenes
         public int Rows { get; set; }
         public int Columns { get; set; }
         public bool IsVisible { get; set; } = true;
-        public Dictionary<string, Sprite> Sprites { get; set; } = new Dictionary<string, Sprite>();
+        public bool IsActive { get; set; } = false;
         public Dictionary<string, SceneGrid> Grids { get; set; } = new Dictionary<string, SceneGrid>();
     }
 }
